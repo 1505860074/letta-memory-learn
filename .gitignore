@@ -1,0 +1,16 @@
+# Python 虚拟环境（体积巨大，不应纳入版本控制）
+.venv/
+venv/
+
+# Python 编译缓存
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 环境变量文件（含密钥，只提交 .env.example 模板）
+.env
+
+# 编辑器 / 系统杂项
+.DS_Store
+.idea/
+.vscode/
