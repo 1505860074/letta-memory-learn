@@ -75,6 +75,7 @@ TOOL_SCHEMAS = [
 
 def _core_memory_append(agent_id: str, label: str, content: str) -> str:
     """在已有 core memory 块末尾追加一行；块不存在就新建。是 memory(command="str_replace"/"create") 的简化封装。"""
+    # 字典推导式：把记忆块列表转成 {label: 块} 的字典，之后可以按 label 直接查
     blocks = {b["label"]: b for b in core_memory.get_all_blocks(agent_id)}
     path = f"/memories/{label}"
     if label not in blocks or not blocks[label]["value"]:
@@ -84,7 +85,9 @@ def _core_memory_append(agent_id: str, label: str, content: str) -> str:
     return core_memory.str_replace(agent_id, path, old_value, new_value)
 
 
+# DISPATCH：把"工具名 -> 具体 Python 函数"对应起来，供 execute_tool_call 按名字找到要执行的函数
 DISPATCH = {
+    # lambda：匿名函数（没有名字的函数），这里把统一的 (agent_id, **kw) 调用转接到真正的记忆函数上
     "core_memory_append": lambda agent_id, **kw: _core_memory_append(agent_id, **kw),
     "archival_memory_insert": lambda agent_id, **kw: archival_memory.archival_memory_insert(agent_id, **kw),
     "archival_memory_search": lambda agent_id, **kw: archival_memory.archival_memory_search(agent_id, **kw),
@@ -96,4 +99,5 @@ def execute_tool_call(agent_id: str, name: str, arguments: dict) -> str:
     """agent_loop 从模型返回的 tool_call 里拿到 name/arguments，丢进这里执行，拿到字符串结果。"""
     if name not in DISPATCH:
         return f"未知工具: {name}"
+    # DISPATCH[name](...)：按名字取出函数并调用；**arguments 把 dict 展开成一个个关键字参数传入
     return DISPATCH[name](agent_id, **arguments)

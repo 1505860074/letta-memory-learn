@@ -12,6 +12,7 @@ Agent Loop：整个项目的"心脏"，对应原项目 letta/agents/letta_agent.
   -> 重复上一步，直到模型给出面向用户的最终文本回复
   -> 把这轮的 user/assistant 消息落盘进 recall memory，供以后回忆
 """
+# json：Python 标准库，用来在 JSON 字符串与 Python 对象之间互相转换（后面 JSON 解析要用）
 import json
 
 from agent import llm_client
@@ -25,6 +26,8 @@ def _build_system_prompt(agent_id: str) -> str:
     blocks = core_memory.get_all_blocks(agent_id)
     if not blocks:
         return "你是一个会持续积累记忆的助手。你可以调用工具来读写你的长期记忆。"
+    # "\n".join(可迭代对象)：字符串(str)的方法，用换行符把括号里这一串字符串拼成一整段文本
+    # 括号里是一个"生成器表达式"，把每个记忆块格式化成 "[标签] 内容"
     memory_text = "\n".join(f"[{b['label']}] {b['value']}" for b in blocks)
     return (
         "你是一个会持续积累记忆的助手。以下是你当前的 core memory（这部分内容永远可见）：\n"
@@ -41,8 +44,13 @@ def step(agent_id: str, user_text: str) -> str:
     messages += [{"role": m["role"], "content": m["content"]} for m in history]
     messages.append({"role": "user", "content": user_text})
 
+    # range(n)：Python 内置函数，生成 0,1,...,n-1 的整数序列，这里用来最多循环 MAX_TOOL_ROUNDS 次
     for _ in range(MAX_TOOL_ROUNDS):
+
+        # 真正访问模型得到回复
         reply = llm_client.chat(messages, TOOL_SCHEMAS)  # 第三步：问模型
+        
+        # dict.get(key)：字典的方法，安全取值——键不存在时返回 None，而不是抛 KeyError
         tool_calls = reply.get("tool_calls")
 
         if not tool_calls:  # 模型直接给出面向用户的回复，循环结束
@@ -56,6 +64,7 @@ def step(agent_id: str, user_text: str) -> str:
         messages.append(reply)
         for call in tool_calls:
             name = call["function"]["name"]
+            # json.loads(...)：标准库函数，把模型返回的 JSON 格式字符串解析成 Python 的 dict
             arguments = json.loads(call["function"]["arguments"] or "{}")
             result = execute_tool_call(agent_id, name, arguments)  # 第四步：真正执行记忆读写
             messages.append({"role": "tool", "tool_call_id": call["id"], "content": result})

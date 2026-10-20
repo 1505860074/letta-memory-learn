@@ -1,5 +1,11 @@
+# 第三方库清单：用 pip install -r requirements.txt 按下面这些包一次性安装
+# openai：OpenAI 官方 SDK；DeepSeek 兼容 OpenAI 协议，所以借它来调用 DeepSeek
 openai>=1.40.0
+# psycopg[binary]：Postgres 的 Python 驱动 psycopg 3；[binary] 表示装预编译版，免去本地编译
 psycopg[binary]>=3.1
+# pgvector：配合 Postgres 的 pgvector 扩展，让 Python 能读写 vector 类型、做向量检索
 pgvector>=0.3.6
+# sentence-transformers：本地把文本转成向量（embedding）的库，用于 archival memory 语义检索
 sentence-transformers>=3.0
+# python-dotenv：从 .env 文件读取配置（如 API Key、数据库地址）并放进环境变量
 python-dotenv>=1.0
